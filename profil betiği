@@ -1,0 +1,31 @@
+# Bu kod, işlemi hangi profil tarafından başlatıldığını gösterir
+Write-Host "Bu işlem $(whoami) tarafından başlatıldı."
+
+# Başlamadan önce genel zaman aşımı (global timeout) belirleyin
+$globalTimeout = 600  # Örneğin, 600 saniye (10 dakika)
+
+# İşlem süresini ölçmek için Measure-Command kullanın
+$elapsedTime = Measure-Command {
+    $Job = Start-Job -ScriptBlock {
+        & "C:\Users\stj.dnemlik\Desktop\RunChannel.ps1" -channelName "chrome" -operation "uninstall" 2>&1 | Out-Null
+        $Result = Receive-Job $Job  # İşlem sonuçlarını alın
+        # İşlemi belirtilen genel zaman aşımına kadar bekleyin
+        $jobState = Wait-Job $Job -Timeout $globalTimeout -ErrorAction SilentlyContinue
+        if ($jobState.State -eq 'Completed') {
+            # İşlem tamamlanmış, sonuçları alın
+            $Result = Receive-Job $Job
+        } else {
+            # İşlem belirtilen zaman aşımına ulaşmadan sonlandırılmış, işlemi temizleyin
+            Remove-Job $Job
+            Write-Host "İşlem zaman aşımına uğradı."
+        }
+    }
+}
+
+# İşlem süresini ekrana yazdırın
+Write-Host "İşlem $($elapsedTime.TotalSeconds) saniye sürdü."
+
+# Diğer işlemleri buraya ekleyin
+
+# Profil betiğinizi kaydedin
+Write-Host "Profil betiği çalıştı!"
